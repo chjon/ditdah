@@ -10,10 +10,13 @@
 
 #include <errno.h>
 #include <math.h>
-#include <sys/inotify.h>
 #include <linux/input.h>
 
 #include "portaudio.h"
+
+#include "keyboard_event_handler.h"
+#include "portaudio_manager.h"
+#include "portaudio_stream.h"
 
 #define SAMPLE_RATE (44100)
 
@@ -24,12 +27,6 @@ enum MorseElement {
     DAH = 1,
     LETTER_BREAK,
     WORD_BREAK,
-};
-
-struct paSineWave {
-    long frequency;
-    long phase_shift;
-    long i; // Time steps, in units of 1 / <SAMPLE_RATE>
 };
 
 // Morse Code durations, in units of 1 / <SAMPLE_RATE>
@@ -140,33 +137,7 @@ static int patestCallback(
     return 0;
 }
 
-int test_morse(long frequency) {
-    // Initialize PortAudio
-    PaStream *stream;
-    PaError err;
-    err = Pa_Initialize();
-    if (err != paNoError) {
-        printf("PortAudio error: %s\n", Pa_GetErrorText(err));
-        return err;
-    }
-
-    // no input channels
-    const int numInputChannels = 0;
-
-    // stereo output
-    const int numOutputChannels = 2;
-
-    // 32 bit floating point output
-    const PaSampleFormat paSampleFormat = paFloat32;
-
-    // Sample rate (Hz)
-    const double sampleRate = SAMPLE_RATE;
-
-    // The number of sample frames that PortAudio will request from the callback
-    // Apps may want to use paFramesPerBufferUnspecified, which tells PortAudio
-    // to pick the best, possibly changing, buffer size.
-    const unsigned long framesPerBuffer = 256;
-
+int keyboard_morse(KeyboardEventHandler& keh, long frequency) {
     // Populate data buffer
     paMorse data{
         .t = 0,
@@ -176,107 +147,49 @@ int test_morse(long frequency) {
         .elements = std::queue<MorseElement>(),
     };
 
-    // Open an audio I/O stream
-    err = Pa_OpenDefaultStream(
-        &stream,
-        numInputChannels,
-        numOutputChannels,
-        paSampleFormat,  
-        sampleRate,
-        framesPerBuffer,        
-        patestCallback, /* this is your callback function */
-        &data /*This is a pointer that will be passed to your callback*/
-    );
-    if (err != paNoError) {
-        printf("PortAudio error: %s\n", Pa_GetErrorText(err));
-        return err;
-    }
-
-    // Start audio stream
-    err = Pa_StartStream(stream);
-    if (err != paNoError) {
-        printf("PortAudio error: %s\n", Pa_GetErrorText(err));
-        return err;
-    }
-
-    // Open keyboard input data file
-    const char* path = "/dev/input/event2";
-    FILE* kbd_file = fopen(path, "r");
-    if (kbd_file == nullptr) {
-        printf("Failed to open file %s: %d\n", path, errno);
-        return 1;
-    }
+    // Open an audio output stream
+    PortAudioStream stream(0, 2, SAMPLE_RATE, paFloat32, 256);
+    stream.open(patestCallback, &data);
+    stream.start();
 
     // Sleep until interrupted
-    input_event kbd_input;
-    while (!interrupted) {
-        if (fread(&kbd_input, sizeof(input_event), 1, kbd_file) == -1) {
-            printf("Failed to read event: %d\n", errno);
-            interrupted = true;
-        } else {
-            if (kbd_input.type == EV_KEY && kbd_input.value == 1) {
-                switch (kbd_input.code) {
-                    case KEY_A:
-                        data.elements.push(MorseElement::DIT);
-                        data.elements.push(MorseElement::DAH);
-                        data.elements.push(MorseElement::LETTER_BREAK);
-                        break;
+    keh.run([&](input_event kbd_input) {
+        // Only handle initial keypress event
+        if (kbd_input.type != EV_KEY || kbd_input.value != 1) return;
+        
+        switch (kbd_input.code) {
+            case KEY_A:
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
 
-                    case KEY_B:
-                        data.elements.push(MorseElement::DAH);
-                        data.elements.push(MorseElement::DIT);
-                        data.elements.push(MorseElement::DIT);
-                        data.elements.push(MorseElement::DIT);
-                        data.elements.push(MorseElement::LETTER_BREAK);
-                        break;
+            case KEY_B:
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
 
-                    case KEY_C:
-                        data.elements.push(MorseElement::DAH);
-                        data.elements.push(MorseElement::DIT);
-                        data.elements.push(MorseElement::DAH);
-                        data.elements.push(MorseElement::DIT);
-                        data.elements.push(MorseElement::LETTER_BREAK);
-                        break;
+            case KEY_C:
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
 
-                    case KEY_D:
-                        data.elements.push(MorseElement::DAH);
-                        data.elements.push(MorseElement::DIT);
-                        data.elements.push(MorseElement::DIT);
-                        data.elements.push(MorseElement::LETTER_BREAK);
-                    
-                    default:
-                        break;
-                }
-            }
+            case KEY_D:
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::LETTER_BREAK);
+
+            default:
+                break;
         }
-    }
-
-    if (fclose(kbd_file) == -1) {
-        printf("Failed to close keyboard input file: %d\n", errno);
-    } else {
-        printf("Done\n");
-    }
-
-    // Stop audio stream
-    err = Pa_StopStream(stream);
-    if (err != paNoError) {
-        printf("PortAudio error: %s\n", Pa_GetErrorText(err));
-        return err;
-    }
-
-    // Close audio stream
-    err = Pa_CloseStream( stream );
-    if (err != paNoError) {
-        printf("PortAudio error: %s\n", Pa_GetErrorText(err));
-        return err;
-    }
-
-    // Clean up PortAudio
-    err = Pa_Terminate();
-    if (err != paNoError) {
-        printf("PortAudio error: %s\n", Pa_GetErrorText(err));
-        return err;
-    }
+    });
 
     return 0;
 }
@@ -284,14 +197,24 @@ int test_morse(long frequency) {
 int main(const int argc, const char * const* argv) {
     // Requires sudo setcap 'cap_dac_override=ep' argv[0]
 
-    if (argc != 2) {
-        std::cout << "Usage: " << argv[0] << " <FREQ_Hz> " << std::endl;
+    if (argc != 3) {
+        std::cout << "Usage: " << argv[0] << " <KEYBOARD_INPUT_FILE> <FREQ_Hz> " << std::endl;
         return 1;
     }
+
+    // Parse inputs
+    const char* path = argv[1];
+    const long frequency = std::atol(argv[2]);
 
     // Install signal handler
     interrupted = false;
     std::signal(SIGINT, signal_handler);
 
-    return test_morse(std::atol(argv[1]));
+    // Create keyboard event handler
+    KeyboardEventHandler keh(path, interrupted);
+
+    // Initialize PortAudio
+    PortAudioManager manager;
+
+    return keyboard_morse(keh, frequency);
 }
