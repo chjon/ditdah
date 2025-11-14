@@ -30,7 +30,7 @@ enum MorseElement {
 };
 
 // Morse Code durations, in units of 1 / <SAMPLE_RATE>
-const long DURATION_DIT = 10 * SAMPLE_RATE / 100;
+const long DURATION_DIT = 5 * SAMPLE_RATE / 100;
 const long DURATION_DAH = 3 * DURATION_DIT;
 const long DURATION_INTER_ELEMENT_GAP = 1 * DURATION_DIT;
 const long DURATION_INTRA_LETTER_GAP = 3 * DURATION_DIT; // 3 dits total
@@ -185,7 +185,165 @@ int keyboard_morse(KeyboardEventHandler& keh, long frequency) {
                 data.elements.push(MorseElement::DIT);
                 data.elements.push(MorseElement::DIT);
                 data.elements.push(MorseElement::LETTER_BREAK);
+                break;
 
+            case KEY_E:
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
+
+            case KEY_F:
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
+                
+            case KEY_G:
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
+                
+            case KEY_H:
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
+            
+            case KEY_I:
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
+
+            case KEY_J:
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
+
+            case KEY_K:
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
+
+            case KEY_L:
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
+
+            case KEY_M:
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
+
+            case KEY_N:
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
+
+            case KEY_O:
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
+
+            case KEY_P:
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
+
+            case KEY_Q:
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
+
+            case KEY_R:
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
+
+            case KEY_S:
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
+
+            case KEY_T:
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
+
+            case KEY_U:
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
+
+            case KEY_V:
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
+
+            case KEY_W:
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
+
+            case KEY_X:
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
+
+            case KEY_Y:
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
+
+            case KEY_Z:
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DAH);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::DIT);
+                data.elements.push(MorseElement::LETTER_BREAK);
+                break;
+                
             default:
                 break;
         }
