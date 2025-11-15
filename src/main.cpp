@@ -98,28 +98,20 @@ static int patestCallback(
             // Determine the next time there's a state change
             } else {                
                 MorseElement& element = data->elements.front();
-                
-                // Use 'invalid' lengths to encode gaps
-                data->emit = false;
-                if (element.len == 0) {
-                    data->next_t = DURATION_INTRA_LETTER_GAP;
-                    data->elements.pop();
-                    continue;
-                } else if (element.len == 0x3) {
-                    data->next_t = DURATION_INTRA_WORD_GAP;
-                    data->elements.pop();
-                }
+                data->emit = element.len;
 
-                // Dits and dahs
-                data->emit = true;
-                if (element.code & 0x1) {
-                    data->next_t = DURATION_DAH;
-                } else {
-                    data->next_t = DURATION_DIT;
-                }
+                // Get duration (branch-free)
+                const static long DURATIONS[] = {
+                    DURATION_DIT,
+                    DURATION_DAH,
+                    DURATION_INTRA_LETTER_GAP,
+                    DURATION_INTRA_WORD_GAP,
+                };
+                const size_t durationOffset = (element.len == 0) << 1;
+                data->next_t = DURATIONS[durationOffset | (element.code & 0x1)];
+                element.len >>= 1, element.code >>= 1;
                 
-                element.len >>= 1;
-                element.code >>= 1;
+                if (!data->emit) data->elements.pop();
             }
         }
 
