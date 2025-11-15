@@ -59,11 +59,13 @@ struct paMorse {
     // Whether to output audio at the current time
     bool emit;
 
-    // Frequency to emit
-    long freq;
+    long waveIndex;
 
     // Morse elements to output
     std::queue<MorseElement> elements;
+
+    // Wave data to output
+    std::vector<float> waveData;
 };
 
 /* This routine will be called by the PortAudio engine when audio is needed.
@@ -78,16 +80,22 @@ static int patestCallback(
     PaStreamCallbackFlags statusFlags,
     void *userData
 ) {
+    // Prevent unused variable warning
+    (void) inputBuffer;
+    
     /* Cast data passed through stream to our structure. */
     paMorse* data = reinterpret_cast<paMorse*>(userData); 
     float* out = reinterpret_cast<float*>(outputBuffer);
-    (void) inputBuffer; /* Prevent unused variable warning. */
     
-    for (unsigned int i = 0, j = data->t; i < framesPerBuffer; i++, j++) {
+    for (
+        unsigned int i = 0, j = data->t;
+        i < framesPerBuffer;
+        i++, j++, data->waveIndex = (data->waveIndex + 1) % data->waveData.size()
+    ) {
         if (j == data->next_t) {
             data->emit = false;
         } else if (j == data->next_t + DURATION_INTER_ELEMENT_GAP) {
-            j = data->t = 0;
+            data->t = 0;
             data->emit = false;
             // Determine the length of the next element to play
             // Stop output if there are no more Morse elements to output
@@ -98,7 +106,8 @@ static int patestCallback(
             // Determine the next time there's a state change
             } else {                
                 MorseElement& element = data->elements.front();
-                data->emit = element.len;
+                data->waveIndex = 0;
+                data->emit = element.len > 0;
 
                 // Get duration (branch-free)
                 const static long DURATIONS[] = {
@@ -115,14 +124,7 @@ static int patestCallback(
             }
         }
 
-        float value = 0.5 * sin(
-            2.0 * M_PI * static_cast<double>(j * data->freq) /
-            static_cast<double>(SAMPLE_RATE)
-        );
-
-        if (!data->emit)
-            value = 0;
-
+        const float value = data->emit ? data->waveData[data->waveIndex] : 0.f;
         *(out++) = value; // left
         *(out++) = value; // right
     }
@@ -132,13 +134,22 @@ static int patestCallback(
 }
 
 int keyboard_morse(KeyboardEventHandler& keh, long frequency) {
+    std::vector<float> waveData;
+    for (long i = 0; i < DURATION_DAH; i++) {
+        waveData.push_back(0.5 * sin(
+            2.0 * M_PI * static_cast<double>(i * frequency) /
+            static_cast<double>(SAMPLE_RATE)
+        ));
+    }
+
     // Populate data buffer
     paMorse data{
         .t = 0,
         .next_t = 0,
         .emit = false,
-        .freq = frequency,
+        .waveIndex = 0,
         .elements = std::queue<MorseElement>(),
+        .waveData = std::move(waveData),
     };
 
     // Open an audio output stream
