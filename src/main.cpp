@@ -195,8 +195,6 @@ int keyboard_morse(KeyboardEventHandler& keh, long frequency) {
 }
 
 int main(const int argc, const char * const* argv) {
-    // Requires sudo setcap 'cap_dac_override=ep' argv[0]
-
     if (argc != 3) {
         std::cout << "Usage: " << argv[0] << " <KEYBOARD_INPUT_FILE> <FREQ_Hz> " << std::endl;
         return 1;
